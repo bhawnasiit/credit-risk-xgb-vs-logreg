@@ -40,7 +40,7 @@ credit-risk-xgb-vs-logreg/
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/credit-risk-xgb-vs-logreg.git
+   git clone https://github.com/bhawnasiit/credit-risk-xgb-vs-logreg.git
    cd credit-risk-xgb-vs-logreg
    ```
 
@@ -98,8 +98,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+- GitHub: [@bhawnasiit](https://github.com/yourusername)
 
 ## 🙏 Acknowledgments
 
