@@ -1,41 +1,4 @@
-"""/*
-Credit Risk Model: XGBoost vs Logistic Regression (Step 1 - With Synthetic Data Generation)
-=========================================================================================
-
-This repository demonstrates credit risk model development using XGBoost and Logistic Regression, 
-with a guided, step-by-step approach and a GitHub-friendly structure. This initial version includes 
-a script for generating synthetic credit data (if no raw data is present), allowing for full demo 
-and reproducibility from scratch.
-
-Recommended Project Folder Structure
------------------------------------
-credit-risk-xgb-vs-logreg/
-├── data/                       <- Data directory (raw & generated data)
-│   └── credit_data.csv         <- Synthetic/real data (not tracked, see README)
-├── notebooks/                  <- Notebooks for exploration and modeling
-├── src/                        <- Source code modules
-│   └── data_prep.py            <- Data generation, loading & EDA
-├── README.md                   <- Project overview, instructions
-├── requirements.txt            <- Python dependencies
-└── .gitignore                  <- To ignore data files, etc.
-
-Step 1: Data Generation, Loading and Basic EDA (src/data_prep.py)
------------------------------------------------------------------
-This script:
-- Generates and saves synthetic credit data if `data/credit_data.csv` doesn't exist.
-- Loads the data from CSV.
-- Performs basic exploratory data analysis (EDA).
-
-Instructions for Use:
----------------------
-- Place this script in `src/data_prep.py`.
-- The script auto-creates `data/credit_data.csv` with demo data if it doesn't exist.
-- Update `README.md` so users can generate demo data for startup.
-
-*/
-
-// src/data_prep.py
-"""
+# src/data_prep.py
 import os
 import pandas as pd
 import numpy as np
@@ -43,8 +6,12 @@ from sklearn.datasets import make_classification
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-DATA_DIR = os.path.join('..', 'data')
+HERE = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.normpath(os.path.join(HERE, '..', 'data'))
 DATA_PATH = os.path.join(DATA_DIR, 'credit_data.csv')
+RESULTS_DIR = os.path.normpath(os.path.join(HERE, '..', 'results'))
+os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(RESULTS_DIR, exist_ok=True)
 
 def generate_synthetic_data(n_samples=3000, random_state=42):
     """
@@ -57,13 +24,13 @@ def generate_synthetic_data(n_samples=3000, random_state=42):
         n_redundant=1,
         n_repeated=0,
         n_classes=2,
-        weights=[0.72, 0.28], # typical class imbalance in credit scoring
+        weights=[0.72, 0.28],  # typical class imbalance in credit scoring
         class_sep=1.5,
         flip_y=0.02,
         random_state=random_state,
     )
     df = pd.DataFrame(X, columns=[
-        "age", "income", "loan_amount", "loan_duration", "num_dependents", 
+        "age", "income", "loan_amount", "loan_duration", "num_dependents",
         "prev_defaults", "employment_years", "credit_utilization"
     ])
     # Apply realistic value scaling
@@ -82,8 +49,6 @@ def ensure_data_exists():
     """
     Check if data/credit_data.csv exists. If not, generate synthetic data and save.
     """
-    if not os.path.exists(DATA_DIR):
-        os.makedirs(DATA_DIR, exist_ok=True)
     if not os.path.exists(DATA_PATH):
         print(f"\n[INFO] {DATA_PATH} not found - Generating synthetic data ...")
         df = generate_synthetic_data()
@@ -102,147 +67,134 @@ def load_data(file_path=DATA_PATH):
 
 def basic_eda(df):
     """
-    Print comprehensive exploratory data analysis information about the DataFrame.
+    Print comprehensive exploratory data analysis info to console only.
+    No tables are saved to disk; plots are saved in detailed_eda.
     """
     print("="*60)
-    print("EXPLORATORY DATA ANALYSIS")
+    print("EXPLORATORY DATA ANALYSIS (Console Summary)")
     print("="*60)
-    
-    # Basic dataset info
+
     print(f"\nDataset Shape: {df.shape[0]} rows × {df.shape[1]} columns")
     print(f"Memory Usage: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
-    
-    # Data types
+
     print("\nData Types:")
     print(df.dtypes)
-    
-    # First few rows
+
     print("\nFirst 5 rows:")
     print(df.head())
-    
-    # Last few rows
-    print("\nLast 5 rows:")
-    print(df.tail())
-    
-    # Basic statistics
+
     print("\nNumerical Summary:")
     print(df.describe(include='all'))
-    
-    # Missing values
-    print("\nMissing Values:")
+
+    print("\nMissing Values (non-zero):")
     missing = df.isnull().sum()
-    missing_pct = (missing / len(df)) * 100
-    missing_df = pd.DataFrame({
-        'Missing Count': missing,
-        'Missing %': missing_pct
-    })
-    print(missing_df[missing_df['Missing Count'] > 0])
-    
-    if missing.sum() == 0:
-        print("No missing values found!")
-    
-    # Target distribution
-    print("\nTarget Distribution:")
+    missing_df = missing[missing > 0]
+    if len(missing_df) == 0:
+        print("No missing values found.")
+    else:
+        print(missing_df)
+
+    print("\nTarget distribution:")
     target_counts = df['default'].value_counts()
     target_pct = df['default'].value_counts(normalize=True) * 100
-    target_df = pd.DataFrame({
-        'Count': target_counts,
-        'Percentage': target_pct
-    })
-    print(target_df)
-    
-    # Class imbalance ratio
-    imbalance_ratio = target_counts[1] / target_counts[0]
+    print(pd.DataFrame({'Count': target_counts, 'Percentage': target_pct}))
+
+    if 0 in target_counts and 1 in target_counts and target_counts[0] > 0:
+        imbalance_ratio = target_counts[1] / target_counts[0]
+    else:
+        imbalance_ratio = float('nan')
     print(f"\nClass Imbalance Ratio (Default/Non-Default): {imbalance_ratio:.3f}")
 
 def detailed_eda(df):
     """
-    Perform detailed exploratory data analysis with visualizations.
+    Perform detailed EDA and save plots to results/ only (no tables).
+    Saves:
+      - results/eda_12panel_overview.png
+      - results/eda_correlation_heatmap.png
     """
     print("\n" + "="*60)
-    print("DETAILED EDA WITH VISUALIZATIONS")
+    print("DETAILED EDA WITH VISUALIZATIONS (Saving to results/)")
     print("="*60)
-    
-    # Set up the plotting style
+
     plt.style.use('default')
     sns.set_palette("husl")
-    
-    # Create figure with subplots
+
+    # Combined 12-panel figure
     fig = plt.figure(figsize=(20, 15))
-    
+
     # 1. Target distribution (pie chart)
     plt.subplot(3, 4, 1)
     target_counts = df['default'].value_counts()
     plt.pie(target_counts.values, labels=['Non-Default', 'Default'], autopct='%1.1f%%', startangle=90)
     plt.title('Target Distribution')
-    
+
     # 2. Age distribution
     plt.subplot(3, 4, 2)
     plt.hist(df['age'], bins=30, alpha=0.7, edgecolor='black')
     plt.title('Age Distribution')
     plt.xlabel('Age')
     plt.ylabel('Frequency')
-    
+
     # 3. Income distribution
     plt.subplot(3, 4, 3)
     plt.hist(df['income'], bins=30, alpha=0.7, edgecolor='black')
     plt.title('Income Distribution')
     plt.xlabel('Income')
     plt.ylabel('Frequency')
-    
+
     # 4. Loan amount distribution
     plt.subplot(3, 4, 4)
     plt.hist(df['loan_amount'], bins=30, alpha=0.7, edgecolor='black')
     plt.title('Loan Amount Distribution')
     plt.xlabel('Loan Amount')
     plt.ylabel('Frequency')
-    
+
     # 5. Credit utilization distribution
     plt.subplot(3, 4, 5)
     plt.hist(df['credit_utilization'], bins=30, alpha=0.7, edgecolor='black')
     plt.title('Credit Utilization Distribution')
     plt.xlabel('Credit Utilization')
     plt.ylabel('Frequency')
-    
+
     # 6. Employment years distribution
     plt.subplot(3, 4, 6)
     plt.hist(df['employment_years'], bins=20, alpha=0.7, edgecolor='black')
     plt.title('Employment Years Distribution')
     plt.xlabel('Employment Years')
     plt.ylabel('Frequency')
-    
+
     # 7. Age vs Default (box plot)
     plt.subplot(3, 4, 7)
     df.boxplot(column='age', by='default', ax=plt.gca())
     plt.title('Age by Default Status')
-    plt.suptitle('')  # Remove automatic title
-    
+    plt.suptitle('')
+
     # 8. Income vs Default (box plot)
     plt.subplot(3, 4, 8)
     df.boxplot(column='income', by='default', ax=plt.gca())
     plt.title('Income by Default Status')
-    plt.suptitle('')  # Remove automatic title
-    
+    plt.suptitle('')
+
     # 9. Credit utilization vs Default (box plot)
     plt.subplot(3, 4, 9)
     df.boxplot(column='credit_utilization', by='default', ax=plt.gca())
     plt.title('Credit Utilization by Default Status')
-    plt.suptitle('')  # Remove automatic title
-    
+    plt.suptitle('')
+
     # 10. Loan amount vs Default (box plot)
     plt.subplot(3, 4, 10)
     df.boxplot(column='loan_amount', by='default', ax=plt.gca())
     plt.title('Loan Amount by Default Status')
-    plt.suptitle('')  # Remove automatic title
-    
-    # 11. Correlation heatmap
+    plt.suptitle('')
+
+    # 11. Correlation heatmap (in panel)
     plt.subplot(3, 4, 11)
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     correlation_matrix = df[numeric_cols].corr()
-    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0, 
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0,
                 square=True, fmt='.2f', cbar_kws={'shrink': 0.8})
     plt.title('Correlation Matrix')
-    
+
     # 12. Default rate by employment years
     plt.subplot(3, 4, 12)
     employment_bins = pd.cut(df['employment_years'], bins=5)
@@ -252,92 +204,72 @@ def detailed_eda(df):
     plt.xlabel('Employment Years (binned)')
     plt.ylabel('Default Rate')
     plt.xticks(rotation=45)
-    
+
     plt.tight_layout()
-    plt.show()
+    fig_path = os.path.join(RESULTS_DIR, 'eda_12panel_overview.png')
+    plt.savefig(fig_path)
+    plt.close(fig)
+
+    # Separate correlation heatmap (standalone)
+    plt.figure(figsize=(8, 6))
+    sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', center=0,
+                square=True, fmt='.2f', cbar_kws={'shrink': 0.8})
+    plt.title('Correlation Matrix')
+    corr_path = os.path.join(RESULTS_DIR, 'eda_correlation_heatmap.png')
+    plt.tight_layout()
+    plt.savefig(corr_path)
+    plt.close()
 
 def feature_analysis(df):
     """
-    Analyze individual features and their relationship with the target.
+    Print per-feature stats by target to console only (no file outputs).
     """
     print("\n" + "="*60)
-    print("FEATURE ANALYSIS")
+    print("FEATURE ANALYSIS (Console Only)")
     print("="*60)
-    
-    # Separate features and target
+
     feature_cols = [col for col in df.columns if col != 'default']
-    
-    print("\nFeature Statistics by Target Class:")
-    print("-" * 40)
-    
     for feature in feature_cols:
-        print(f"\n{feature.upper()}:")
         stats = df.groupby('default')[feature].agg(['count', 'mean', 'std', 'min', 'max'])
-        print(stats)
-        
-        # Calculate default rate by feature quartiles
-        if df[feature].dtype in ['int64', 'float64']:
-            quartiles = pd.qcut(df[feature], q=4, duplicates='drop')
-            default_rate = df.groupby(quartiles)['default'].mean()
-            print(f"\nDefault Rate by {feature} Quartiles:")
-            print(default_rate)
+        print(f"\n{feature.upper()}:\n{stats}")
 
 def outlier_analysis(df):
     """
-    Identify and analyze outliers in the dataset.
+    Identify potential outliers and print summary to console only (no file outputs).
     """
     print("\n" + "="*60)
-    print("OUTLIER ANALYSIS")
+    print("OUTLIER ANALYSIS (Console Only)")
     print("="*60)
-    
+
     numeric_cols = df.select_dtypes(include=[np.number]).columns
-    outlier_info = {}
-    
     for col in numeric_cols:
-        if col != 'default':  # Skip target variable
-            Q1 = df[col].quantile(0.25)
-            Q3 = df[col].quantile(0.75)
-            IQR = Q3 - Q1
-            lower_bound = Q1 - 1.5 * IQR
-            upper_bound = Q3 + 1.5 * IQR
-            
-            outliers = df[(df[col] < lower_bound) | (df[col] > upper_bound)]
-            outlier_count = len(outliers)
-            outlier_pct = (outlier_count / len(df)) * 100
-            
-            outlier_info[col] = {
-                'count': outlier_count,
-                'percentage': outlier_pct,
-                'lower_bound': lower_bound,
-                'upper_bound': upper_bound
-            }
-            
-            print(f"\n{col}:")
-            print(f"  Outliers: {outlier_count} ({outlier_pct:.2f}%)")
-            print(f"  Bounds: [{lower_bound:.2f}, {upper_bound:.2f}]")
-    
-    return outlier_info
+        if col == 'default':
+            continue
+        Q1 = df[col].quantile(0.25)
+        Q3 = df[col].quantile(0.75)
+        IQR = Q3 - Q1
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
+        outlier_count = ((df[col] < lower_bound) | (df[col] > upper_bound)).sum()
+        outlier_pct = (outlier_count / len(df)) * 100
+        print(f"{col}: outliers={outlier_count} ({outlier_pct:.2f}%), bounds=[{lower_bound:.2f}, {upper_bound:.2f}]")
 
 def comprehensive_eda(df):
     """
-    Run all EDA functions in sequence.
+    Run all EDA functions.
+    - Console: summaries, feature stats, outlier info
+    - Files in results/: plots only (no tables)
     """
     basic_eda(df)
     detailed_eda(df)
     feature_analysis(df)
     outlier_analysis(df)
-    
+
     print("\n" + "="*60)
-    print("EDA COMPLETE")
+    print("EDA COMPLETE - plots saved to results/")
     print("="*60)
 
 if __name__ == "__main__":
-    # Ensure data exists (generate if needed)
     ensure_data_exists()
-    
-    # Load the data
     df = load_data()
-    
-    # Perform comprehensive EDA
     comprehensive_eda(df)
-

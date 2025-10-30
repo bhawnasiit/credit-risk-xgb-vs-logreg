@@ -98,14 +98,13 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Your Name**
-- GitHub: [@bhawnasiit](https://github.com/yourusername)
+- GitHub: [@bhawnasiit](https://github.com/bhawnasiit)
 
-## 🙏 Acknowledgments
+## �� Acknowledgments
 
 - scikit-learn team for the excellent ML library
 - XGBoost developers for the powerful gradient boosting framework
 - The data science community for inspiration and best practices
-```
 
 ## 3. Update .gitignore
 
@@ -240,7 +239,7 @@ When we add new components, I'll remind you to:
    git add .
    git commit -m "Initial commit: Credit risk model project setup"
    git branch -M main
-   git remote add origin https://github.com/yourusername/credit-risk-xgb-vs-logreg.git
+   git remote add origin https://github.com/bhawnasiit/credit-risk-xgb-vs-logreg.git
    git push -u origin main
    ```
 

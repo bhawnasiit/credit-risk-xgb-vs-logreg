@@ -1,0 +1,9 @@
+feature,outlier_count,outlier_pct,lower_bound,upper_bound
+age,52,1.7333333333333332,-8.0,96.0
+income,30,1.0,-4057.5,89354.5
+loan_amount,18,0.6,-3156.375,13048.625
+loan_duration,27,0.8999999999999999,-7.5,44.5
+num_dependents,0,0.0,-3.5,8.5
+prev_defaults,39,1.3,-1.5,2.5
+employment_years,23,0.7666666666666666,-4.5,15.5
+credit_utilization,0,0.0,-0.11332793511200212,1.6679967610672013
